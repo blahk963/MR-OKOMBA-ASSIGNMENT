@@ -3,33 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>3D Moving Car</title>
+<title>3D Animations: Car, Moon, Ball</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  html, body { height: 100%; }
-  body {
+  html, body {
+    height: 100%;
     overflow: hidden;
-    background: linear-gradient(#7ec4e8 0%, #d9f0fa 55%);
+    background: #0a1020;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
 
-  /* ---------- Scene / camera ---------- */
-  .stage {
+  /* ---------- Switcher ---------- */
+  nav {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    background: rgba(0, 0, 0, .45);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+  }
+  nav button {
+    border: 0;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  nav button:hover { background: rgba(255, 255, 255, .18); }
+  nav button.active { background: #fff; color: #111; }
+  nav button:focus-visible { outline: 2px solid #ffd166; outline-offset: 2px; }
+
+  /* Only the active scene is shown, so hidden scenes don't run their animations */
+  .view { position: absolute; inset: 0; display: none; overflow: hidden; }
+  .view.active { display: block; }
+
+
+  /* =====================================================
+     1. CAR
+     ===================================================== */
+  #car { background: linear-gradient(#7ec4e8 0%, #d9f0fa 55%); }
+
+  #car .stage {
     position: absolute;
     inset: 0;
     perspective: 2600px;
     perspective-origin: 50% 30%;
   }
-  .world {
+  #car .world {
     position: absolute;
     left: 50%;
     top: 62%;
     transform-style: preserve-3d;
-    transform: rotateX(-14deg) rotateY(-10deg);   /* camera angle */
+    transform: rotateX(-14deg) rotateY(-10deg);
   }
 
-  /* ---------- Ground and road ---------- */
-  .ground {
+  #car .ground {
     position: absolute;
     width: 9000px;
     height: 6000px;
@@ -38,7 +75,7 @@
     background: #6a994e;
     transform: rotateX(90deg) translateY(-1600px);
   }
-  .road {
+  #car .road {
     position: absolute;
     left: 0;
     width: 100%;
@@ -48,7 +85,7 @@
     border-top: 6px solid #f2f2f2;
     border-bottom: 6px solid #f2f2f2;
   }
-  .road::after {
+  #car .road::after {
     content: "";
     position: absolute;
     left: 0;
@@ -58,16 +95,14 @@
     background: repeating-linear-gradient(90deg, #f6f6f6 0 80px, transparent 80px 160px);
   }
 
-  /* ---------- Car ---------- */
-  .car {
+  #car .vehicle {
     position: absolute;
     left: 0;
     top: 0;
     transform-style: preserve-3d;
-    animation: drive 8s linear infinite;
+    animation: car-drive 8s linear infinite;
   }
-
-  .shadow {
+  #car .shadow {
     position: absolute;
     left: -125px;
     top: -60px;
@@ -79,8 +114,7 @@
     transform: rotateX(90deg) translateZ(2px);
   }
 
-  /* Generic 3D box: set --l (length), --h (height), --d (depth), --x, --y */
-  .box {
+  #car .box {
     position: absolute;
     left: var(--x);
     top: var(--y);
@@ -88,38 +122,33 @@
     height: var(--h);
     transform-style: preserve-3d;
   }
-  .box i { position: absolute; display: block; }
-
-  .box .near, .box .far { width: var(--l); height: var(--h); }
-  .box .near { transform: translateZ(calc(var(--d) / 2)); }
-  .box .far  { transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); }
-
-  .box .nose, .box .rear {
+  #car .box i { position: absolute; display: block; }
+  #car .box .near, #car .box .far { width: var(--l); height: var(--h); }
+  #car .box .near { transform: translateZ(calc(var(--d) / 2)); }
+  #car .box .far  { transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); }
+  #car .box .nose, #car .box .rear {
     width: var(--d);
     height: var(--h);
     left: calc((var(--l) - var(--d)) / 2);
   }
-  .box .nose { transform: rotateY(90deg)  translateZ(calc(var(--l) / 2)); }
-  .box .rear { transform: rotateY(-90deg) translateZ(calc(var(--l) / 2)); }
-
-  .box .top, .box .bottom {
+  #car .box .nose { transform: rotateY(90deg)  translateZ(calc(var(--l) / 2)); }
+  #car .box .rear { transform: rotateY(-90deg) translateZ(calc(var(--l) / 2)); }
+  #car .box .top, #car .box .bottom {
     width: var(--l);
     height: var(--d);
     top: calc((var(--h) - var(--d)) / 2);
   }
-  .box .top    { transform: rotateX(90deg)  translateZ(calc(var(--h) / 2)); }
-  .box .bottom { transform: rotateX(-90deg) translateZ(calc(var(--h) / 2)); }
+  #car .box .top    { transform: rotateX(90deg)  translateZ(calc(var(--h) / 2)); }
+  #car .box .bottom { transform: rotateX(-90deg) translateZ(calc(var(--h) / 2)); }
 
-  /* Body */
-  .hull  { --l: 240px; --h: 40px; --d: 110px; --x: -120px; --y: -58px; }
-  .hull .near   { background: #d62828; }
-  .hull .far    { background: #b01f1f; }
-  .hull .nose   { background: #c1121f; }
-  .hull .rear   { background: #8f1017; }
-  .hull .top    { background: #ef4b4b; }
-  .hull .bottom { background: #1b1b1b; }
-
-  .hull .near::after {              /* door line */
+  #car .hull { --l: 240px; --h: 40px; --d: 110px; --x: -120px; --y: -58px; }
+  #car .hull .near   { background: #d62828; }
+  #car .hull .far    { background: #b01f1f; }
+  #car .hull .nose   { background: #c1121f; }
+  #car .hull .rear   { background: #8f1017; }
+  #car .hull .top    { background: #ef4b4b; }
+  #car .hull .bottom { background: #1b1b1b; }
+  #car .hull .near::after {
     content: "";
     left: 50%;
     top: 0;
@@ -128,8 +157,8 @@
     position: absolute;
     background: rgba(0, 0, 0, .25);
   }
-  .hull .nose::before, .hull .nose::after,
-  .hull .rear::before, .hull .rear::after {
+  #car .hull .nose::before, #car .hull .nose::after,
+  #car .hull .rear::before, #car .hull .rear::after {
     content: "";
     position: absolute;
     top: 10px;
@@ -137,22 +166,20 @@
     height: 10px;
     border-radius: 3px;
   }
-  .hull .nose::before, .hull .rear::before { left: 8px; }
-  .hull .nose::after,  .hull .rear::after  { right: 8px; }
-  .hull .nose::before, .hull .nose::after { background: #ffd166; box-shadow: 0 0 14px #ffd166; }
-  .hull .rear::before, .hull .rear::after { background: #ff5a5a; }
+  #car .hull .nose::before, #car .hull .rear::before { left: 8px; }
+  #car .hull .nose::after,  #car .hull .rear::after  { right: 8px; }
+  #car .hull .nose::before, #car .hull .nose::after { background: #ffd166; box-shadow: 0 0 14px #ffd166; }
+  #car .hull .rear::before, #car .hull .rear::after { background: #ff5a5a; }
 
-  /* Cabin */
-  .cabin { --l: 120px; --h: 36px; --d: 100px; --x: -80px; --y: -94px; }
-  .cabin .near, .cabin .far, .cabin .nose, .cabin .rear {
+  #car .cabin { --l: 120px; --h: 36px; --d: 100px; --x: -80px; --y: -94px; }
+  #car .cabin .near, #car .cabin .far, #car .cabin .nose, #car .cabin .rear {
     background: linear-gradient(135deg, #cfeaf8, #8fc3e3);
     border: 5px solid #d62828;
   }
-  .cabin .top    { background: #ef4b4b; }
-  .cabin .bottom { background: #8f1017; }
+  #car .cabin .top    { background: #ef4b4b; }
+  #car .cabin .bottom { background: #8f1017; }
 
-  /* Wheels */
-  .wheel {
+  #car .wheel {
     position: absolute;
     width: 44px;
     height: 44px;
@@ -160,9 +187,9 @@
     top: -44px;
     border-radius: 50%;
     background: radial-gradient(circle, #cfcfcf 0 30%, #111 32%);
-    animation: spin .5s linear infinite;
+    animation: car-spin .5s linear infinite;
   }
-  .wheel::after {                   /* spoke, so the spin is visible */
+  #car .wheel::after {
     content: "";
     position: absolute;
     left: 20%;
@@ -173,54 +200,273 @@
     background: #666;
   }
 
-  /* ---------- Animations ---------- */
-  @keyframes drive {
+  @keyframes car-drive {
     from { transform: translateX(-1100px); }
     to   { transform: translateX(1100px); }
   }
-  @keyframes spin {
+  @keyframes car-spin {
     from { transform: translateZ(var(--z)) rotate(0deg); }
     to   { transform: translateZ(var(--z)) rotate(calc(360deg * var(--dir))); }
   }
 
+
+  /* =====================================================
+     2. MOON
+     ===================================================== */
+  #moon { background: radial-gradient(ellipse at 50% 100%, #1b2a4a 0%, #0a1020 55%, #03050c 100%); }
+
+  #moon .stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 20px 30px,  #fff, transparent),
+      radial-gradient(1px   1px   at 90px 120px, #fff, transparent),
+      radial-gradient(2px   2px   at 160px 60px, #dfe9ff, transparent),
+      radial-gradient(1px   1px   at 220px 180px,#fff, transparent),
+      radial-gradient(1.5px 1.5px at 300px 90px, #fff, transparent),
+      radial-gradient(1px   1px   at 60px 220px, #cfe0ff, transparent);
+    background-size: 340px 260px;
+    opacity: .8;
+  }
+  #moon .space {
+    position: absolute;
+    inset: 0;
+    perspective: 900px;
+    perspective-origin: 50% 60%;
+  }
+  #moon .orbit {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    animation: moon-travel 14s ease-in-out infinite alternate;
+  }
+  #moon .moon {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    left: -100px;
+    top: -100px;
+    border-radius: 50%;
+    background: #e9e7dc;
+    overflow: hidden;
+    box-shadow:
+      0 0 60px 10px rgba(255, 255, 225, .25),
+      0 0 160px 40px rgba(180, 200, 255, .15);
+  }
+  #moon .moon::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle 22px at  70px  70px, rgba(70,70,70,.55), rgba(120,120,120,.25) 70%, transparent 74%),
+      radial-gradient(circle 12px at 170px  50px, rgba(70,70,70,.55), rgba(120,120,120,.25) 70%, transparent 74%),
+      radial-gradient(circle 30px at 250px 120px, rgba(70,70,70,.5),  rgba(120,120,120,.2)  70%, transparent 74%),
+      radial-gradient(circle 14px at 320px  60px, rgba(70,70,70,.55), rgba(120,120,120,.25) 70%, transparent 74%),
+      radial-gradient(circle 18px at 120px 150px, rgba(70,70,70,.5),  rgba(120,120,120,.2)  70%, transparent 74%),
+      radial-gradient(circle 10px at 370px 160px, rgba(70,70,70,.55), rgba(120,120,120,.25) 70%, transparent 74%);
+    background-size: 400px 200px;
+    background-repeat: repeat-x;
+    animation: moon-rotate 40s linear infinite;
+  }
+  #moon .moon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, transparent 0%, rgba(0,0,0,.35) 60%, rgba(0,0,0,.85) 100%);
+    box-shadow: inset -18px -18px 50px rgba(0, 0, 0, .75);
+  }
+
+  @keyframes moon-travel {
+    0%   { transform: translate3d(-42vw,  25vh, -500px) scale(.7); }
+    50%  { transform: translate3d(  0vw, -22vh,  120px) scale(1.2); }
+    100% { transform: translate3d( 42vw,  25vh, -500px) scale(.7); }
+  }
+  @keyframes moon-rotate {
+    to { background-position-x: -400px; }
+  }
+
+
+  /* =====================================================
+     3. BOUNCING BALL
+     ===================================================== */
+  #ball { background: linear-gradient(#1a1f3a 0%, #3b4372 45%, #6c74a8 100%); }
+
+  #ball .floor-wrap {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 55vh;
+    perspective: 500px;
+    perspective-origin: 50% 0%;
+    overflow: hidden;
+  }
+  #ball .floor {
+    position: absolute;
+    left: -100%;
+    top: 0;
+    width: 300%;
+    height: 220%;
+    transform-origin: 50% 0;
+    transform: rotateX(68deg);
+    background: conic-gradient(#2b2f4a 25%, #454b78 0 50%, #2b2f4a 0 75%, #454b78 0);
+    background-size: 12vmax 12vmax;
+  }
+  #ball .fade {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 55vh;
+    background: linear-gradient(#3b4372 0%, transparent 35%);
+    pointer-events: none;
+  }
+
+  #ball .track {
+    position: absolute;
+    left: 50%;
+    bottom: 22vh;
+    width: 0;
+    height: 0;
+    animation: ball-travel 10s ease-in-out infinite alternate;
+  }
+  #ball .shadow {
+    position: absolute;
+    left: -8vmin;
+    bottom: -2.5vmin;
+    width: 16vmin;
+    height: 5vmin;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .55);
+    filter: blur(4px);
+    animation: ball-shadow 1.2s linear infinite;
+  }
+  #ball .bounce {
+    position: absolute;
+    left: -7vmin;
+    bottom: 0;
+    width: 14vmin;
+    height: 14vmin;
+    animation: ball-bounce 1.2s linear infinite;
+  }
+  #ball .sphere {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transform-origin: 50% 100%;
+    background:
+      radial-gradient(circle at 34% 28%, rgba(255,255,255,.9) 0 6%, transparent 18%),
+      radial-gradient(circle at 36% 30%, #ff9a8b 0%, #e63946 45%, #7a0f1b 100%);
+    box-shadow: inset -1.2vmin -1.4vmin 3vmin rgba(0, 0, 0, .45);
+    animation: ball-squash 1.2s linear infinite;
+  }
+
+  @keyframes ball-travel {
+    from { transform: translate(-30vw, -7vh) scale(.65); }
+    to   { transform: translate( 30vw,  7vh) scale(1.2); }
+  }
+  @keyframes ball-bounce {
+    0%   { transform: translateY(0);     animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
+    50%  { transform: translateY(-36vh); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+    100% { transform: translateY(0); }
+  }
+  @keyframes ball-squash {
+    0%   { transform: scale(1.2, .75); }
+    8%   { transform: scale(.94, 1.08); }
+    16%  { transform: scale(1, 1); }
+    84%  { transform: scale(1, 1); }
+    94%  { transform: scale(.96, 1.06); }
+    100% { transform: scale(1.2, .75); }
+  }
+  @keyframes ball-shadow {
+    0%   { transform: scale(1);   opacity: 1;  animation-timing-function: cubic-bezier(.2, .6, .4, 1); }
+    50%  { transform: scale(.45); opacity: .3; animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+
+
   @media (prefers-reduced-motion: reduce) {
-    .car { animation-duration: 24s; }
-    .wheel { animation-duration: 1.5s; }
+    #car .vehicle { animation-duration: 24s; }
+    #car .wheel { animation-duration: 1.5s; }
+    #moon .orbit { animation-duration: 60s; }
+    #moon .moon::before { animation-duration: 160s; }
+    #ball .track { animation-duration: 30s; }
+    #ball .bounce, #ball .sphere, #ball .shadow { animation-duration: 3s; }
   }
 </style>
 </head>
 <body>
 
-  <div class="stage">
-    <div class="world">
+  <nav>
+    <button type="button" data-view="car">Car</button>
+    <button type="button" data-view="moon">Moon</button>
+    <button type="button" data-view="ball">Ball</button>
+  </nav>
 
-      <div class="ground"><div class="road"></div></div>
+  <!-- 1. CAR -->
+  <section class="view" id="car">
+    <div class="stage">
+      <div class="world">
+        <div class="ground"><div class="road"></div></div>
 
-      <div class="car">
-        <div class="shadow"></div>
+        <div class="vehicle">
+          <div class="shadow"></div>
 
-        <div class="box hull">
-          <i class="near"></i><i class="far"></i>
-          <i class="nose"></i><i class="rear"></i>
-          <i class="top"></i><i class="bottom"></i>
+          <div class="box hull">
+            <i class="near"></i><i class="far"></i>
+            <i class="nose"></i><i class="rear"></i>
+            <i class="top"></i><i class="bottom"></i>
+          </div>
+
+          <div class="box cabin">
+            <i class="near"></i><i class="far"></i>
+            <i class="nose"></i><i class="rear"></i>
+            <i class="top"></i><i class="bottom"></i>
+          </div>
+
+          <div class="wheel" style="--x:-75px; --z:57px;  --dir:1"></div>
+          <div class="wheel" style="--x:75px;  --z:57px;  --dir:1"></div>
+          <div class="wheel" style="--x:-75px; --z:-57px; --dir:-1"></div>
+          <div class="wheel" style="--x:75px;  --z:-57px; --dir:-1"></div>
         </div>
-
-        <div class="box cabin">
-          <i class="near"></i><i class="far"></i>
-          <i class="nose"></i><i class="rear"></i>
-          <i class="top"></i><i class="bottom"></i>
-        </div>
-
-        <!-- near side wheels -->
-        <div class="wheel" style="--x:-75px; --z:57px;  --dir:1"></div>
-        <div class="wheel" style="--x:75px;  --z:57px;  --dir:1"></div>
-        <!-- far side wheels -->
-        <div class="wheel" style="--x:-75px; --z:-57px; --dir:-1"></div>
-        <div class="wheel" style="--x:75px;  --z:-57px; --dir:-1"></div>
       </div>
-
     </div>
-  </div>
+  </section>
 
+  <!-- 2. MOON -->
+  <section class="view" id="moon">
+    <div class="stars"></div>
+    <div class="space">
+      <div class="orbit">
+        <div class="moon"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. BOUNCING BALL -->
+  <section class="view" id="ball">
+    <div class="floor-wrap"><div class="floor"></div></div>
+    <div class="fade"></div>
+    <div class="track">
+      <div class="shadow"></div>
+      <div class="bounce"><div class="sphere"></div></div>
+    </div>
+  </section>
+
+<script>
+  const views = document.querySelectorAll('.view');
+  const buttons = document.querySelectorAll('nav button');
+
+  function show(id) {
+    if (!document.getElementById(id)) id = 'car';
+    views.forEach(v => v.classList.toggle('active', v.id === id));
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.view === id));
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
+  window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+  show(location.hash.slice(1));
+</script>
 </body>
 </html>
